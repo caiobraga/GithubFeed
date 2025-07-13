@@ -2,9 +2,9 @@
 
 import { signIn } from "next-auth/react"
 import { useState } from "react"
-import { Github, Star, GitBranch, Users, Code, Zap, Shield, Sparkles, ArrowRight, Play, Heart, TrendingUp } from "lucide-react"
+import { Github, Star, GitBranch, Users, Code, Zap, Shield, Sparkles, ArrowRight, Heart, TrendingUp } from "lucide-react"
 import { Button } from "./ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
+import { Card, CardContent } from "./ui/card"
 import { Badge } from "./ui/badge"
 
 export default function LandingPage() {
@@ -74,7 +74,7 @@ export default function LandingPage() {
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-pink-500/20 rounded-full blur-3xl"></div>
       </div>
-      
+
       {/* Header */}
       <header className="relative z-10 border-b border-white/10 bg-black/20 backdrop-blur-sm">
         <div className="container mx-auto px-6 py-6">
@@ -93,7 +93,7 @@ export default function LandingPage() {
                 </Badge>
               </div>
             </div>
-            
+
             <div className="hidden md:flex items-center space-x-6">
               <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
                 Recursos
@@ -120,7 +120,7 @@ export default function LandingPage() {
               </span>
             </h1>
             <p className="text-2xl md:text-3xl text-white/80 max-w-3xl mx-auto leading-relaxed">
-              Conecte-se ao GitHub e transforme sua atividade de desenvolvimento em uma 
+              Conecte-se ao GitHub e transforme sua atividade de desenvolvimento em uma
               <span className="text-purple-300 font-semibold"> experiência social moderna</span> e envolvente.
             </p>
           </div>
@@ -145,15 +145,8 @@ export default function LandingPage() {
                 </>
               )}
             </Button>
-            
-            <Button
-              variant="outline"
-              size="lg"
-              className="border-2 border-white/30 text-white hover:bg-white/10 px-10 py-8 text-xl rounded-2xl backdrop-blur-sm hover-lift"
-            >
-              <Play className="w-6 h-6 mr-3" />
-              Ver Demo
-            </Button>
+
+
           </div>
 
           {/* Stats */}
@@ -222,12 +215,12 @@ export default function LandingPage() {
                 <span className="text-white/80">100% Seguro</span>
               </div>
             </div>
-            
+
             <h2 className="text-4xl font-bold text-white">
               Pronto para começar?
             </h2>
             <p className="text-xl text-white/80 max-w-3xl mx-auto">
-              Junte-se à comunidade de desenvolvedores que já estão usando o GitHub Feed para 
+              Junte-se à comunidade de desenvolvedores que já estão usando o GitHub Feed para
               acompanhar suas atividades de forma mais inteligente e social.
             </p>
             <Button
