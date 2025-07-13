@@ -17,6 +17,7 @@ interface Commit {
     name: string
     email: string
     avatar_url?: string
+    login?: string
   }
   date: string
   url: string
@@ -32,37 +33,69 @@ interface CommitFeedProps {
   onUserClick?: (username: string) => void
 }
 
+const formatDate = (dateString: string) => {
+  const date = new Date(dateString)
+  const now = new Date()
+  const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
+  
+  if (diffInHours < 1) return 'Agora mesmo'
+  if (diffInHours < 24) return `${diffInHours}h atrás`
+  if (diffInHours < 48) return 'Ontem'
+  return date.toLocaleDateString('pt-BR')
+}
+
 export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps) {
   const [commits, setCommits] = useState<Commit[]>([])
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [stats, setStats] = useState({
+    recentCommits: 0,
+    repositories: 0,
+    contributors: new Set<string>()
+  })
 
   const octokit = new Octokit({
     auth: accessToken,
   })
 
-  const fetchCommits = async () => {
+  const fetchCommits = async (pageNum = 1, append = false) => {
     try {
       setError(null)
+      if (pageNum === 1) {
+        setLoading(true)
+      } else {
+        setLoadingMore(true)
+      }
       
       // Buscar repositórios do usuário
       const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
         sort: 'updated',
-        per_page: 10,
+        per_page: 30,
         type: 'all'
       })
 
       const allCommits: Commit[] = []
+      const contributors = new Set<string>()
 
       // Buscar commits de cada repositório
-      for (const repo of repos.slice(0, 5)) { // Limitar a 5 repos para performance
+      for (const repo of repos) {
         try {
           const { data: repoCommits } = await octokit.rest.repos.listCommits({
             owner: repo.owner.login,
             repo: repo.name,
-            per_page: 5,
-            since: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString() // Últimos 7 dias
+            per_page: 20,
+            page: pageNum,
+            since: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString() // Últimos 90 dias
+          })
+
+          repoCommits.forEach(commit => {
+            if (commit.author?.login) {
+              contributors.add(commit.author.login)
+            }
           })
 
           const formattedCommits = repoCommits.map(commit => ({
@@ -71,7 +104,8 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
             author: {
               name: commit.commit.author?.name || 'Unknown',
               email: commit.commit.author?.email || '',
-              avatar_url: commit.author?.avatar_url
+              avatar_url: commit.author?.avatar_url,
+              login: commit.author?.login
             },
             date: commit.commit.author?.date || '',
             url: commit.html_url,
@@ -91,35 +125,63 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
       // Ordenar por data
       allCommits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       
-      setCommits(allCommits.slice(0, 20)) // Mostrar apenas os 20 mais recentes
+      setStats({
+        recentCommits: allCommits.length,
+        repositories: repos.length,
+        contributors: contributors
+      })
+
+      if (append) {
+        setCommits(prev => [...prev, ...allCommits])
+      } else {
+        setCommits(allCommits)
+      }
+      
+      setHasMore(allCommits.length >= 20)
     } catch (err) {
       console.error('Erro ao buscar commits:', err)
       setError('Erro ao carregar commits. Verifique suas permissões do GitHub.')
     } finally {
       setLoading(false)
+      setLoadingMore(false)
       setRefreshing(false)
     }
   }
 
+  const debounce = <T extends (...args: any[]) => void>(func: T, wait: number) => {
+    let timeout: NodeJS.Timeout
+    return (...args: Parameters<T>) => {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => func(...args), wait)
+    }
+  }
+
+  const handleScroll = debounce(() => {
+    const scrollPosition = window.scrollY + window.innerHeight
+    const documentHeight = document.documentElement.scrollHeight
+    
+    // Load more when 20% from bottom of page
+    if (documentHeight - scrollPosition <= window.innerHeight * 0.2 && !loading && hasMore) {
+      setPage(prev => prev + 1)
+      fetchCommits(page + 1, true)
+    }
+  }, 150)
+
   const handleRefresh = async () => {
     setRefreshing(true)
-    await fetchCommits()
+    setPage(1)
+    await fetchCommits(1)
   }
 
   useEffect(() => {
-    fetchCommits()
+    fetchCommits(1)
+    
+    // Add scroll listener
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [accessToken])
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60))
-    
-    if (diffInHours < 1) return 'Agora mesmo'
-    if (diffInHours < 24) return `${diffInHours}h atrás`
-    if (diffInHours < 48) return 'Ontem'
-    return date.toLocaleDateString('pt-BR')
-  }
+
 
   const truncateMessage = (message: string, maxLength: number = 100) => {
     const firstLine = message.split('\n')[0]
@@ -139,7 +201,7 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
         </div>
         
         <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
+          {[...Array(3)].map((_, i) => (
             <Card key={i} className="bg-white/5 border-white/10">
               <CardContent className="p-6">
                 <div className="flex items-start space-x-4">
@@ -182,6 +244,39 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
 
   return (
     <div className="space-y-6">
+      {/* Stats Section */}
+      <div className="grid grid-cols-3 gap-4 mb-6">
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-400">Commits Recentes</p>
+              <h3 className="text-2xl font-bold text-purple-200">{stats.recentCommits}</h3>
+            </div>
+            <GitCommit className="w-8 h-8 text-purple-400" />
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-400">Repositórios</p>
+              <h3 className="text-2xl font-bold text-purple-200">{stats.repositories}</h3>
+            </div>
+            <GitBranch className="w-8 h-8 text-purple-400" />
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-white/5 border-white/10">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-400">Contribuidores</p>
+              <h3 className="text-2xl font-bold text-purple-200">{stats.contributors.size}</h3>
+            </div>
+            <Users className="w-8 h-8 text-purple-400" />
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <h2 className="text-3xl font-bold text-white flex items-center">
@@ -198,7 +293,6 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
             disabled={refreshing}
             variant="outline"
             size="sm"
-            className="border-white/20 text-white hover:bg-white/10"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             Atualizar
@@ -219,8 +313,7 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
           </CardContent>
         </Card>
       ) : (
-        <ScrollArea className="h-[600px]">
-          <div className="space-y-4">
+        <div className="space-y-4 pr-4">
             {commits.map((commit) => (
               <Card 
                 key={commit.sha} 
@@ -231,7 +324,7 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
                     {/* Avatar */}
                     <Avatar 
                       className="w-12 h-12 cursor-pointer hover:scale-105 transition-transform"
-                      onClick={() => onUserClick && onUserClick(commit.author.name)}
+                      onClick={() => commit.author.login && onUserClick && onUserClick(commit.author.login)}
                     >
                       <AvatarImage src={commit.author.avatar_url} alt={commit.author.name} />
                       <AvatarFallback className="bg-purple-600 text-white">
@@ -248,8 +341,8 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
                           </p>
                           <div className="flex items-center space-x-4 mt-2 text-sm text-white/60">
                             <span 
-                              className="hover:text-purple-300 cursor-pointer transition-colors"
-                              onClick={() => onUserClick && onUserClick(commit.author.name)}
+                              className={`transition-colors ${commit.author.login ? 'hover:text-purple-300 cursor-pointer' : ''}`}
+                              onClick={() => commit.author.login && onUserClick && onUserClick(commit.author.login)}
                             >
                               {commit.author.name}
                             </span>
@@ -259,11 +352,9 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
                             </span>
                           </div>
                         </div>
-                        
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-white/60 hover:text-white hover:bg-white/10"
                           onClick={() => window.open(commit.url, '_blank')}
                         >
                           <ExternalLink className="w-4 h-4" />
@@ -281,7 +372,6 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
                             {commit.repository.name}
                           </span>
                         </div>
-                        
                         <Badge 
                           variant="outline" 
                           className="border-white/20 text-white/70 text-xs"
@@ -294,34 +384,15 @@ export default function CommitFeed({ accessToken, onUserClick }: CommitFeedProps
                 </CardContent>
               </Card>
             ))}
-          </div>
-        </ScrollArea>
+            {loadingMore && (
+              <div className="py-4 flex justify-center">
+                <div className="animate-spin text-purple-400">
+                  <RefreshCw className="w-6 h-6" />
+                </div>
+              </div>
+            )}
+        </div>
       )}
-
-      {/* Footer Stats */}
-      <Card className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/30">
-        <CardContent className="p-6">
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-purple-300">{commits.length}</div>
-              <div className="text-white/60 text-sm">Commits Recentes</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-pink-300">
-                {new Set(commits.map(c => c.repository.name)).size}
-              </div>
-              <div className="text-white/60 text-sm">Repositórios</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-blue-300">
-                {new Set(commits.map(c => c.author.name)).size}
-              </div>
-              <div className="text-white/60 text-sm">Contribuidores</div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
-  )
+  );
 }
-
