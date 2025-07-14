@@ -1,8 +1,8 @@
 "use client"
 
 import { useSession } from "next-auth/react"
-import LandingPage from "@/components/landing-page"
-import Dashboard from "@/components/dashboard"
+import LandingPage from "./components/landing-page";
+import Dashboard from "./components/dashboard";
 
 export default function Home() {
   const { data: session, status } = useSession()

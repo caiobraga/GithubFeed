@@ -2,8 +2,8 @@
 
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "../../../[locale]/ui/card"
+import { Button } from "../../../[locale]/ui/button"
 import { AlertCircle, Home } from "lucide-react"
 
 export default function AuthError() {

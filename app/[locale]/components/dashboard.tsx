@@ -1,21 +1,33 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useTranslations } from 'next-intl'
+import { usePathname } from 'next/navigation'
 import { useSession, signOut } from "next-auth/react"
-import { Card, CardContent, CardHeader, CardTitle } from "./ui/card"
-import { Button } from "./ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { Badge } from "./ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { Github, LogOut, GitCommit, Users, Book, Settings, Bell } from "lucide-react"
 import CommitFeed from "./commit-feed"
-import UserProfile from "./user-profile"
 import RepositoryList from "./repository-list"
+import UserProfile from "./user-profile"
+import { Github, LogOut, GitCommit, Users, Book, Settings, Bell } from "lucide-react"
+import { Card, CardContent } from "../ui/card"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { Button } from "../ui/button"
+import { Badge } from "../ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 
 export default function Dashboard() {
+  const t = useTranslations('Dashboard')
   const { data: session } = useSession()
   const [activeTab, setActiveTab] = useState("feed")
   const [selectedUser, setSelectedUser] = useState<string | null>(null)
+  const pathname = usePathname()
+  const language = pathname?.split('/')[1] || 'pt'
+
+  // Quando mudar para a aba de perfil, mostrar o perfil do usuário logado
+  useEffect(() => {
+    if (activeTab === "profile" && !selectedUser && session?.user?.name) {
+      setSelectedUser(session.user.name)
+    }
+  }, [activeTab, selectedUser, session?.user?.name])
 
   const handleUserClick = (username: string) => {
     setSelectedUser(username)
@@ -35,8 +47,8 @@ export default function Dashboard() {
             <div className="text-center space-y-4">
               <div className="w-16 h-16 border-4 border-purple-400/20 border-t-purple-400 rounded-full animate-spin mx-auto"></div>
               <div>
-                <h3 className="text-lg font-semibold text-white">Configurando sua conta</h3>
-                <p className="text-sm text-white/70">Conectando com o GitHub...</p>
+                <h3 className="text-lg font-semibold text-white">{t('loading')}</h3>
+                <p className="text-sm text-white/70">{t('loading')}</p>
               </div>
             </div>
           </CardContent>
@@ -50,28 +62,30 @@ export default function Dashboard() {
       case "feed":
         return (
           <CommitFeed 
-            accessToken={session.accessToken} 
+            accessToken={session.accessToken ?? ""} 
             onUserClick={handleUserClick}
+            locale={language}
           />
         )
       case "repositories":
         return (
           <RepositoryList 
-            accessToken={session.accessToken}
+            accessToken={session.accessToken ?? ""}
             onUserClick={handleUserClick}
+            locale={language}
           />
         )
       case "profile":
         return selectedUser ? (
           <UserProfile 
             username={selectedUser}
-            accessToken={session.accessToken}
+            accessToken={session.accessToken ?? ""}
             onBack={handleBackToFeed}
           />
         ) : (
           <UserProfile 
             username={session.user?.name || ""}
-            accessToken={session.accessToken}
+            accessToken={session.accessToken ?? ""}
             onBack={handleBackToFeed}
           />
         )
@@ -80,8 +94,8 @@ export default function Dashboard() {
           <Card className="bg-white/5 border-white/10">
             <CardContent className="pt-6">
               <div className="text-center py-8">
-                <h3 className="text-lg font-semibold mb-2 text-white">Em breve</h3>
-                <p className="text-white/60">Esta funcionalidade estará disponível em breve!</p>
+                <h3 className="text-lg font-semibold mb-2 text-white">{t('comingSoon.title')}</h3>
+                <p className="text-white/60">{t('comingSoon.description')}</p>
               </div>
             </CardContent>
           </Card>
@@ -136,7 +150,7 @@ export default function Dashboard() {
                 className="border-white/20 text-white hover:bg-white/10"
               >
                 <LogOut className="w-4 h-4 mr-2" />
-                Sair
+                {language === 'pt' ? 'Sair' : 'Logout'}
               </Button>
             </div>
           </div>
@@ -151,25 +165,25 @@ export default function Dashboard() {
             <div className="flex justify-center">
               <TabsList className="bg-white/5 border border-white/10 backdrop-blur-sm p-1">
                 <TabsTrigger 
-                  value="feed" 
+                  value="feed"
                   className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-white/70 hover:text-white transition-colors"
                 >
                   <GitCommit className="w-4 h-4 mr-2" />
-                  Feed de Commits
+                  {t('feed')}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="repositories"
                   className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-white/70 hover:text-white transition-colors"
                 >
                   <Book className="w-4 h-4 mr-2" />
-                  Repositórios
+                  {t('repositories')}
                 </TabsTrigger>
                 <TabsTrigger 
                   value="profile"
                   className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-white/70 hover:text-white transition-colors"
                 >
                   <Users className="w-4 h-4 mr-2" />
-                  Perfil
+                  {t('profile')}
                 </TabsTrigger>
               </TabsList>
             </div>

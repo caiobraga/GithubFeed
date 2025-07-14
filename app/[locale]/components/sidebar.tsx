@@ -2,11 +2,12 @@
 
 import { useSession } from "next-auth/react"
 import { Home, BookOpen, Users, TrendingUp, Settings, Bell, Search } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { Button } from "./ui/button"
-import { Card, CardContent } from "./ui/card"
-import { Badge } from "./ui/badge"
-import { Separator } from "./ui/separator"
+import { useTranslations } from 'next-intl'
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { Button } from "../ui/button"
+import { Card, CardContent } from "../ui/card"
+import { Badge } from "../ui/badge"
+import { Separator } from "../ui/separator"
 
 interface SidebarProps {
   activeTab: string
@@ -15,12 +16,13 @@ interface SidebarProps {
 
 export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
   const { data: session } = useSession()
+  const t = useTranslations('Sidebar')
 
   const menuItems = [
-    { id: "feed", label: "Feed", icon: Home, badge: null },
-    { id: "repositories", label: "Repositórios", icon: BookOpen, badge: null },
-    { id: "trending", label: "Trending", icon: TrendingUp, badge: "Em breve" },
-    { id: "network", label: "Rede", icon: Users, badge: "Em breve" },
+    { id: "feed", label: t('feed'), icon: Home, badge: null },
+    { id: "repositories", label: t('repositories'), icon: BookOpen, badge: null },
+    { id: "trending", label: t('trending'), icon: TrendingUp, badge: t('comingSoon') },
+    { id: "network", label: t('network'), icon: Users, badge: t('comingSoon') },
   ]
 
   if (!session?.user) return null
@@ -49,11 +51,11 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
             <div className="mt-3 grid grid-cols-2 gap-2 text-center">
               <div>
                 <p className="text-lg font-semibold">0</p>
-                <p className="text-xs text-muted-foreground">Seguidores</p>
+                <p className="text-xs text-muted-foreground">{t('followers')}</p>
               </div>
               <div>
                 <p className="text-lg font-semibold">0</p>
-                <p className="text-xs text-muted-foreground">Seguindo</p>
+                <p className="text-xs text-muted-foreground">{t('following')}</p>
               </div>
             </div>
           </CardContent>
@@ -94,8 +96,8 @@ export default function Sidebar({ activeTab, onTabChange }: SidebarProps) {
         <div className="space-y-1">
           <Button variant="ghost" className="w-full justify-start h-10" disabled>
             <Bell className="h-4 w-4 mr-3" />
-            <span className="flex-1 text-left">Notificações</span>
-            <Badge variant="outline" className="text-xs">Em breve</Badge>
+            <span className="flex-1 text-left">{t('notifications')}</span>
+            <Badge variant="outline" className="text-xs">{t('comingSoon')}</Badge>
           </Button>
           
           <Button variant="ghost" className="w-full justify-start h-10" disabled>

@@ -5,9 +5,9 @@ import { useSession } from "next-auth/react"
 import CommitFeed from "./commit-feed"
 import UserProfile from "./user-profile"
 import RepositoryList from "./repository-list"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { Card, CardContent } from "./ui/card"
-import { Badge } from "./ui/badge"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
+import { Card, CardContent } from "../ui/card"
+import { Badge } from "../ui/badge"
 import { GitBranch, Users, BookOpen } from "lucide-react"
 
 export default function GitHubFeed() {

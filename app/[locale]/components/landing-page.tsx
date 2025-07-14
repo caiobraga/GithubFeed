@@ -1,14 +1,31 @@
 "use client"
 
 import { signIn } from "next-auth/react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Github, Star, GitBranch, Users, Code, Zap, Shield, Sparkles, ArrowRight, Heart, TrendingUp } from "lucide-react"
-import { Button } from "./ui/button"
-import { Card, CardContent } from "./ui/card"
-import { Badge } from "./ui/badge"
+import { Button } from "../ui/button"
+import { useTranslations } from 'next-intl'
+import { Card, CardContent } from "../ui/card"
+import { Badge } from "../ui/badge"
+import { useRouter, usePathname } from 'next/navigation'
 
 export default function LandingPage() {
+  const t = useTranslations('LandingPage')
   const [isLoading, setIsLoading] = useState(false)
+  const [language, setLanguage] = useState('en')
+  const router = useRouter()
+  const pathname = usePathname()
+
+  useEffect(() => {
+    const currentLang = pathname.split('/')[1]
+    setLanguage(currentLang)
+  }, [pathname])
+
+  const toggleLanguage = () => {
+    const newLang = language === 'en' ? 'pt' : 'en'
+    const newPath = pathname.replace(`/${language}`, `/${newLang}`)
+    router.push(newPath)
+  }
 
   const handleSignIn = async () => {
     setIsLoading(true)
@@ -24,39 +41,21 @@ export default function LandingPage() {
   const features = [
     {
       icon: GitBranch,
-      title: "Feed de Commits",
-      description: "Acompanhe todos os seus commits em tempo real em um feed elegante e organizado.",
+      title: t('features.commits'),
+      description: t('features.commitsDesc'),
       color: "from-blue-500 to-cyan-500"
     },
     {
       icon: Users,
-      title: "Perfis de Desenvolvedores",
-      description: "Explore perfis completos de desenvolvedores e suas contribuições no GitHub.",
+      title: t('features.profile'),
+      description: t('features.profileDesc'),
       color: "from-purple-500 to-pink-500"
     },
     {
       icon: Code,
-      title: "Repositórios",
-      description: "Navegue por seus repositórios com busca avançada e filtros inteligentes.",
+      title: t('features.repos'),
+      description: t('features.reposDesc'),
       color: "from-green-500 to-emerald-500"
-    },
-    {
-      icon: Zap,
-      title: "Tempo Real",
-      description: "Receba atualizações instantâneas sobre atividades em seus projetos favoritos.",
-      color: "from-yellow-500 to-orange-500"
-    },
-    {
-      icon: Shield,
-      title: "Seguro",
-      description: "Autenticação segura via GitHub OAuth sem armazenar dados sensíveis.",
-      color: "from-red-500 to-pink-500"
-    },
-    {
-      icon: Sparkles,
-      title: "Interface Moderna",
-      description: "Design limpo e intuitivo inspirado nas melhores redes sociais.",
-      color: "from-indigo-500 to-purple-500"
     }
   ]
 
@@ -94,16 +93,31 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div className="hidden md:flex items-center space-x-6">
-              <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
-                Recursos
+            <div className="flex items-center space-x-6">
+              <Button
+                variant="ghost"
+                onClick={toggleLanguage}
+                className="text-white/80 hover:text-white hover:bg-white/10"
+              >
+                {language.toUpperCase()}
               </Button>
-              <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
-                Sobre
-              </Button>
-              <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
-                Contato
-              </Button>
+              <div className="hidden md:flex space-x-6">
+                <a href="#features">
+                  <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
+                    {t('nav.features')}
+                  </Button>
+                </a>
+                <a href="#about">
+                  <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
+                    {t('nav.about')}
+                  </Button>
+                </a>
+                <a href="#contact">
+                  <Button variant="ghost" className="text-white/80 hover:text-white hover:bg-white/10">
+                    {t('nav.contact')}
+                  </Button>
+                </a>
+              </div>
             </div>
           </nav>
         </div>
@@ -113,15 +127,15 @@ export default function LandingPage() {
       <section className="relative z-10 container mx-auto px-6 py-20 text-center">
         <div className="max-w-5xl mx-auto space-y-10 animate-fade-in-up">
           <div className="space-y-6">
-            <h1 className="text-6xl md:text-8xl font-bold leading-tight">
-              Sua rede social de
+            <h1 className="text-4xl sm:text-6xl md:text-8xl font-bold leading-tight">
+              {t('title')}
               <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent animate-pulse">
-                desenvolvimento
+                {t('subtitle')}
               </span>
             </h1>
-            <p className="text-2xl md:text-3xl text-white/80 max-w-3xl mx-auto leading-relaxed">
-              Conecte-se ao GitHub e transforme sua atividade de desenvolvimento em uma
-              <span className="text-purple-300 font-semibold"> experiência social moderna</span> e envolvente.
+            <p className="text-xl sm:text-2xl md:text-3xl text-white/80 max-w-3xl mx-auto leading-relaxed">
+              {t('about.description')}
+              <span className="text-purple-300 font-semibold"> {t('about.stats.integration')}</span>
             </p>
           </div>
 
@@ -140,7 +154,7 @@ export default function LandingPage() {
               ) : (
                 <>
                   <Github className="w-6 h-6 mr-3" />
-                  Entrar com GitHub
+                  {t('hero.loginButton')}
                   <ArrowRight className="w-6 h-6 ml-3" />
                 </>
               )}
@@ -150,7 +164,7 @@ export default function LandingPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-2xl mx-auto mt-20">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto mt-20">
             {stats.map((stat, index) => {
               const Icon = stat.icon
               return (
@@ -168,18 +182,18 @@ export default function LandingPage() {
       </section>
 
       {/* Features Section */}
-      <section className="relative z-10 container mx-auto px-6 py-20">
+      <section id="features" className="relative z-10 container mx-auto px-6 py-20">
         <div className="text-center mb-16 animate-fade-in-up">
           <h2 className="text-5xl font-bold mb-6">
-            Funcionalidades que você vai
-            <span className="text-purple-400"> amar</span>
+            {t('features.title')}
+            <span className="text-purple-400"> {t('features.subtitle')}</span>
           </h2>
           <p className="text-2xl text-white/70 max-w-3xl mx-auto">
-            Descubra como o GitHub Feed transforma sua experiência de desenvolvimento
+            {t('features.subtitle')}
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
           {features.map((feature, index) => {
             const Icon = feature.icon
             return (
@@ -188,7 +202,7 @@ export default function LandingPage() {
                   <div className={`w-20 h-20 bg-gradient-to-r ${feature.color} rounded-3xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
                     <Icon className="w-10 h-10 text-white" />
                   </div>
-                  <h3 className="text-2xl font-semibold text-white">{feature.title}</h3>
+                  <h3 className="text-lg font-semibold text-white">{feature.title}</h3>
                   <p className="text-white/70 leading-relaxed text-lg">{feature.description}</p>
                 </CardContent>
               </Card>
@@ -197,31 +211,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Social Proof Section */}
-      <section className="relative z-10 container mx-auto px-6 py-20">
+      {/* About Section */}
+      <section id="about" className="relative z-10 container mx-auto px-6 py-20">
         <Card className="bg-gradient-to-r from-purple-600/20 to-pink-600/20 border-purple-500/30 backdrop-blur-sm">
           <CardContent className="p-12 text-center space-y-8">
             <div className="flex justify-center space-x-8 mb-8">
               <div className="flex items-center space-x-2">
                 <Heart className="w-6 h-6 text-red-400" />
-                <span className="text-white/80">Amado por desenvolvedores</span>
+                <span className="text-white/80">{t('about.loved')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <TrendingUp className="w-6 h-6 text-green-400" />
-                <span className="text-white/80">Em crescimento</span>
+                <span className="text-white/80">{t('about.growing')}</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Shield className="w-6 h-6 text-blue-400" />
-                <span className="text-white/80">100% Seguro</span>
+                <span className="text-white/80">{t('about.secure')}</span>
               </div>
             </div>
 
-            <h2 className="text-4xl font-bold text-white">
-              Pronto para começar?
-            </h2>
-            <p className="text-xl text-white/80 max-w-3xl mx-auto">
-              Junte-se à comunidade de desenvolvedores que já estão usando o GitHub Feed para
-              acompanhar suas atividades de forma mais inteligente e social.
+            <h1 className="text-4xl font-bold tracking-tight text-white sm:text-6xl">
+              {t('title')}
+            </h1>
+            <p className="mt-6 text-lg leading-8 text-gray-300">
+              {t('subtitle')}
             </p>
             <Button
               onClick={handleSignIn}
@@ -237,13 +250,30 @@ export default function LandingPage() {
               ) : (
                 <>
                   <Github className="w-6 h-6 mr-3" />
-                  Começar Agora
+                  {t('about.startButton')}
                   <ArrowRight className="w-6 h-6 ml-3" />
                 </>
               )}
             </Button>
           </CardContent>
         </Card>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="relative z-10 container mx-auto px-6 py-20 text-center">
+        <h2 className="text-4xl font-bold mb-8">{t('contact.title')}</h2>
+        <p className="text-xl text-white/80 mb-8">
+          {t('contact.developer')}
+        </p>
+        <a 
+          href="https://github.com/caiobraga"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center space-x-2 text-purple-400 hover:text-purple-300 transition-colors"
+        >
+          <Github className="w-6 h-6" />
+          <span>github.com/caiobraga</span>
+        </a>
       </section>
 
       {/* Footer */}
@@ -257,7 +287,7 @@ export default function LandingPage() {
               <span className="text-2xl font-bold text-white">GitHub Feed</span>
             </div>
             <p className="text-white/60 text-lg">
-              Conectando desenvolvedores através do código
+              {t('footer.tagline')}
             </p>
             <div className="flex justify-center space-x-8 text-white/50">
               <Button variant="ghost" className="text-white/50 hover:text-white">Privacidade</Button>
@@ -266,7 +296,7 @@ export default function LandingPage() {
               <Button variant="ghost" className="text-white/50 hover:text-white">API</Button>
             </div>
             <div className="text-white/40 text-sm">
-              © 2025 GitHub Feed. Feito com ❤️ para a comunidade de desenvolvedores.
+              {t('footer.copyright')}
             </div>
           </div>
         </div>

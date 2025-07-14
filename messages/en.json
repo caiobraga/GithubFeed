@@ -1,0 +1,93 @@
+{
+  "LandingPage": {
+    "title": "Track your GitHub activity",
+    "subtitle": "Stay up to date with your repositories and contributions",
+    "nav": {
+      "features": "Features",
+      "about": "About",
+      "contact": "Contact"
+    },
+    "hero": {
+      "title": "Track your GitHub activity",
+      "subtitle": "Stay up to date with your repositories and contributions",
+      "loginButton": "Sign in with GitHub"
+    },
+    "features": {
+      "title": "Features",
+      "subtitle": "Everything you need to track your GitHub activity",
+      "commits": "Commit Feed",
+      "commitsDesc": "Track all your commits in real-time in an elegant and organized feed",
+      "repos": "Repositories",
+      "reposDesc": "Browse your repositories with advanced search and smart filters",
+      "profile": "Developer Profiles",
+      "profileDesc": "Explore complete developer profiles and their GitHub contributions"
+    },
+    "about": {
+      "title": "About GitHub Feed",
+      "description": "A modern way to track your GitHub activity",
+      "stats": {
+        "integration": "GitHub Integration",
+        "setup": "Setup Time",
+        "repos": "Repositories"
+      },
+      "loved": "Loved by the community",
+      "growing": "Growing rapidly",
+      "secure": "Safe and reliable",
+      "startButton": "Get started"
+    },
+    "contact": {
+      "title": "Get in touch",
+      "developer": "Have questions? We'd love to hear from you."
+    },
+    "footer": {
+      "tagline": "Built with love for the GitHub community",
+      "copyright": " 2024 GitHub Feed. All rights reserved."
+    }
+  },
+  "Dashboard": {
+    "feed": "Feed",
+    "repositories": "Repositories",
+    "profile": "Profile"
+  },
+  "Sidebar": {
+    "feed": "Feed",
+    "repositories": "Repositories",
+    "trending": "Trending",
+    "network": "Network",
+    "notifications": "Notifications",
+    "followers": "Followers",
+    "following": "Following",
+    "comingSoon": "Coming Soon",
+    "profile": "Profile"
+  },
+  "CommitFeed": {
+    "title": "Commit Feed",
+    "repositories": "Repositories",
+    "total": "Total",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "contributors": "Contributors",
+    "tryAgain": "Try Again"
+  },
+  "RepositoryList": {
+    "title": "Repositories",
+    "repositories": "Repositories",
+    "refresh": "Refresh",
+    "searchPlaceholder": "Search repositories...",
+    "allLanguages": "All languages",
+    "noRepositoriesFound": "No repositories found",
+    "noRepositories": "No repositories",
+    "tryAdjustingFilters": "Try adjusting your search filters.",
+    "noRepositoriesYet": "You don't have any repositories or aren't watching any.",
+    "private": "Private",
+    "subscribed": "Subscribed",
+    "subscribe": "Subscribe",
+    "contributors": "Contributors",
+    "tryAgain": "Try Again",
+    "total": "Total",
+    "languages": "Languages",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{days} days ago"
+  }
+}

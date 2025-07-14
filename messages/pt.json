@@ -1,0 +1,91 @@
+{
+  "LandingPage": {
+    "title": "Acompanhe sua atividade no GitHub",
+    "subtitle": "Fique atualizado com seus repositórios e contribuições",
+    "nav": {
+      "features": "Funcionalidades",
+      "about": "Sobre",
+      "contact": "Contato"
+    },
+    "hero": {
+      "title": "Acompanhe sua atividade no GitHub",
+      "subtitle": "Fique atualizado com seus repositórios e contribuições",
+      "loginButton": "Entrar com GitHub"
+    },
+    "features": {
+      "title": "Funcionalidades",
+      "subtitle": "Tudo que você precisa para acompanhar sua atividade no GitHub",
+      "commits": "Feed de Commits",
+      "commitsDesc": "Acompanhe todos os seus commits em tempo real em um feed elegante e organizado",
+      "repos": "Repositórios",
+      "reposDesc": "Navegue por seus repositórios com busca avançada e filtros inteligentes",
+      "profile": "Perfis de Desenvolvedores",
+      "profileDesc": "Explore perfis completos de desenvolvedores e suas contribuições no GitHub"
+    },
+    "about": {
+      "title": "Sobre o GitHub Feed",
+      "description": "Uma maneira moderna de acompanhar sua atividade no GitHub",
+      "stats": {
+        "integration": "Integração GitHub",
+        "setup": "Tempo de Setup",
+        "repos": "Repositórios"
+      },
+      "loved": "Amado pela comunidade",
+      "growing": "Crescendo rapidamente",
+      "secure": "Seguro e confiável",
+      "startButton": "Começar agora"
+    },
+    "contact": {
+      "title": "Entre em contato",
+      "developer": "Tem alguma dúvida? Adoraríamos ouvir você."
+    },
+    "footer": {
+      "tagline": "Desenvolvido com amor para a comunidade GitHub",
+      "copyright": " 2024 GitHub Feed. Todos os direitos reservados."
+    }
+  },
+  "Dashboard": {
+    "feed": "Feed",
+    "repositories": "Repositórios",
+    "Sidebar": {
+      "feed": "Feed",
+      "repositories": "Repositórios",
+      "trending": "Trending",
+      "network": "Rede",
+      "notifications": "Notificações",
+      "followers": "Seguidores",
+      "following": "Seguindo",
+      "comingSoon": "Em breve",
+      "profile": "Perfil"
+    },
+    "profile": "Perfil"
+  },
+  "CommitFeed": {
+    "title": "Feed de Commits",
+    "repositories": "Repositórios",
+    "total": "Total",
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "contributors": "Colaboradores",
+    "tryAgain": "Tentar novamente"
+  },
+  "RepositoryList": {
+    "title": "Repositórios",
+    "repositories": "repositórios",
+    "refresh": "Atualizar",
+    "searchPlaceholder": "Buscar repositórios...",
+    "allLanguages": "Todas as linguagens",
+    "noRepositoriesFound": "Nenhum repositório encontrado",
+    "noRepositories": "Nenhum repositório",
+    "tryAdjustingFilters": "Tente ajustar os filtros de busca.",
+    "noRepositoriesYet": "Você ainda não tem repositórios ou não está assistindo nenhum.",
+    "private": "Privado",
+    "subscribed": "Inscrito",
+    "subscribe": "Inscrever-se",
+    "total": "Total",
+    "languages": "Linguagens",
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "daysAgo": "{days} dias atrás"
+  }
+}

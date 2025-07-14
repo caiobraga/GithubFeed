@@ -2,10 +2,10 @@
 
 import { useSession, signOut } from "next-auth/react"
 import { Github, LogOut, Settings } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { Button } from "./ui/button"
-import { Badge } from "./ui/badge"
-import { Separator } from "./ui/separator"
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
+import { Button } from "../ui/button"
+import { Badge } from "../ui/badge"
+import { Separator } from "../ui/separator"
 
 export default function Header() {
   const { data: session } = useSession()

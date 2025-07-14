@@ -2,6 +2,8 @@
 
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { Card, CardContent } from "../../[locale]/ui/card"
+import { Button } from "../../[locale]/ui/button"
 
 export default function SignIn() {
   const router = useRouter()
