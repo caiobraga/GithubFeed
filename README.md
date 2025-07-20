@@ -18,6 +18,25 @@
 ### Overview
 GitHub Feed is a powerful, real-time dashboard that transforms how teams monitor and interact with GitHub repositories. It provides instant visibility into development activity, helping managers and team leads stay informed without diving into technical details.
 
+<div align="center">
+
+### Landing Page
+<img src="/public/homepage.PNG" alt="Homepage" width="800"/>
+
+### Real-time Commit Feed
+<img src="/public/feed1.PNG" alt="Feed" width="800"/>
+
+### Repository Management
+<img src="/public/repos.PNG" alt="Repositories" width="800"/>
+
+### Developer Profiles
+<img src="/public/profile.PNG" alt="Profile" width="800"/>
+
+### Settings & Configuration
+<img src="/public/settings.PNG" alt="Settings" width="800"/>
+
+</div>
+
 ### Key Benefits
 
 **Instant Visibility**
@@ -36,9 +55,9 @@ GitHub Feed is a powerful, real-time dashboard that transforms how teams monitor
 - Enhance transparency in development
 
 ### ROI Metrics
-- **Time Saved**: ~2 hours/week per manager on project status reviews
-- **Onboarding**: 50% faster repository familiarization for new team members
-- **Coordination**: 30% reduction in status update meetings
+- **Time Saved**: less time spent on project status reviews
+- **Onboarding**: faster repository familiarization for new team members
+- **Coordination**: reduction in status update meetings
 
 ---
 
