@@ -80,13 +80,13 @@ export default function RepositoryList({ accessToken, onUserClick, locale = 'en'
         setLoadingMore(true)
       }
       
-      // Buscar contagem total de repositórios do usuário
+
       const response = await octokit.request('GET /user/repos', {
         per_page: 1,
         affiliation: 'owner,collaborator,organization_member'
       })
 
-      // Extrair o total do header Link
+
       const linkHeader = response.headers.link
       if (linkHeader) {
         const match = linkHeader.match(/page=([0-9]+)>; rel="last"/)
@@ -95,14 +95,14 @@ export default function RepositoryList({ accessToken, onUserClick, locale = 'en'
           setTotalRepos(total)
         }
       } else {
-        // Se não houver header Link, significa que há apenas uma página
+
         const { data: allRepos } = await octokit.rest.repos.listForAuthenticatedUser({
           affiliation: 'owner,collaborator,organization_member'
         })
         setTotalRepos(allRepos.length)
       }
 
-      // Buscar página atual de repositórios
+
       const { data: allRepos } = await octokit.rest.repos.listForAuthenticatedUser({
         sort: 'updated',
         per_page: REPOS_PER_PAGE,
@@ -110,16 +110,16 @@ export default function RepositoryList({ accessToken, onUserClick, locale = 'en'
         affiliation: 'owner,collaborator,organization_member'
       })
 
-      // Buscar todos os repositórios que o usuário está assistindo
+
       const { data: allWatchedRepos } = await octokit.rest.activity.listWatchedReposForAuthenticatedUser({
         per_page: 100,
         page: 1
       })
 
-      // Criar um Set com os IDs dos repositórios assistidos
+
       const subscribedRepoIds = new Set(allWatchedRepos.map(repo => repo.id))
 
-      // Adicionar status de inscrição aos repositórios
+
       const reposWithSubscription = allRepos.map(repo => ({
         ...repo,
         description: repo.description || '',
@@ -134,7 +134,7 @@ export default function RepositoryList({ accessToken, onUserClick, locale = 'en'
         setFilteredRepos(reposWithSubscription)
       }
       
-      // Atualizar set de repositórios inscritos
+
       setSubscribedRepos(subscribedRepoIds)
       setHasMore(reposWithSubscription.length === REPOS_PER_PAGE)
       setLoading(false)
@@ -162,24 +162,22 @@ export default function RepositoryList({ accessToken, onUserClick, locale = 'en'
     try {
       const isCurrentlySubscribed = subscribedRepos.has(repo.id)
       
-      // Set loading state
+
       setLoadingSubscriptions(prev => new Set(prev).add(repo.id))
       
       if (isCurrentlySubscribed) {
-        // Unsubscribe
+
         await octokit.activity.deleteRepoSubscription({
           owner: repo.owner.login,
           repo: repo.name
         })
 
-        // Update subscription status locally
         setSubscribedRepos(prev => {
           const newSet = new Set(prev)
           newSet.delete(repo.id)
           return newSet
         })
 
-        // Update repositories list
         setRepositories(prev => 
           prev.map(r => 
             r.id === repo.id 

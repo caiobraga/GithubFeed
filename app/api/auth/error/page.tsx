@@ -12,7 +12,6 @@ export default function AuthError() {
   const error = searchParams.get("error")
 
   useEffect(() => {
-    // Redirecionar automaticamente após 5 segundos
     const timer = setTimeout(() => {
       router.push("/")
     }, 5000)

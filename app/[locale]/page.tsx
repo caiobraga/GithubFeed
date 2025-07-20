@@ -18,12 +18,12 @@ export default function Home() {
     )
   }
 
-  // Se não há sessão, mostrar landing page
+
   if (!session) {
     return <LandingPage />
   }
 
-  // Se há sessão, mostrar dashboard
+
   return <Dashboard />
 }
 

@@ -23,7 +23,7 @@ export default function Dashboard() {
   const pathname = usePathname()
   const language = pathname?.split('/')[1] || 'pt'
 
-  // Quando mudar para a aba de perfil, mostrar o perfil do usuário logado
+
   useEffect(() => {
     if (activeTab === "profile" && !selectedUser && session?.user?.name) {
       setSelectedUser(session.user.name)
@@ -187,7 +187,7 @@ export default function Dashboard() {
               <Settings 
                 accessToken={session.accessToken ?? ""}
                 onTokenChange={(newToken) => {
-                  // TODO: Update session token
+
                   console.log('Token updated:', newToken)
                 }}
                 locale={language}

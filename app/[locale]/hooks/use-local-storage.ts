@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 
 export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void] {
-  // Get initial value
+
   const [storedValue, setStoredValue] = useState<T>(() => {
     try {
       if (typeof window === "undefined") return initialValue
@@ -15,7 +15,7 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
     }
   })
 
-  // Update local storage when value changes
+
   useEffect(() => {
     try {
       if (typeof window !== "undefined") {

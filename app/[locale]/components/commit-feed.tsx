@@ -89,12 +89,12 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
 
   const fetchSubscribedRepos = async () => {
     try {
-      // Get user's watched repositories
+
       const { data: watchedRepos } = await octokit.activity.listWatchedReposForAuthenticatedUser({
         per_page: 100
       })
 
-      // Get unique repository names
+
       const subscribedRepoNames = new Set(
         watchedRepos.map(repo => repo.full_name)
       )
@@ -114,7 +114,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
         setLoadingMore(true)
       }
 
-      // Use cached repos if available, otherwise fetch
+
       let targetRepos: Array<{ owner: { login: string }, name: string, full_name: string, html_url: string }> = [];
       
       if (cachedRepos[filterMode].length > 0) {
@@ -133,7 +133,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
           }));
           setCachedRepos(prev => ({ ...prev, starred: targetRepos }));
         } else if (filterMode === 'subscribed') {
-          // Get all watched (subscribed) repositories
+
           let allWatched: any[] = [];
           let page = 1;
           let hasMore = true;
@@ -163,7 +163,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
           }));
           setCachedRepos(prev => ({ ...prev, subscribed: targetRepos }));
         } else {
-          // For 'all' mode, combine starred and subscribed repositories
+
           const [starred, watched] = await Promise.all([
             octokit.activity.listReposStarredByAuthenticatedUser({ per_page: 100 }),
             octokit.activity.listWatchedReposForAuthenticatedUser({ per_page: 100 })
@@ -185,7 +185,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
             type: 'subscribed'
           }));
 
-          // Combine and deduplicate by full_name
+
           const seen = new Set();
           targetRepos = [...starredRepos, ...watchedRepos].filter(repo => {
             if (seen.has(repo.full_name)) return false;
@@ -200,8 +200,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
       const allCommits: Commit[] = [];
       const contributors = new Set<string>();
 
-      // For subscribed mode, fetch commits from all repositories at once
-      // For other modes, use pagination
+
       const reposToProcess = filterMode === 'subscribed' ? targetRepos : targetRepos.slice((pageNum - 1) * 10, pageNum * 10);
 
       if (reposToProcess.length === 0) {
@@ -210,14 +209,14 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
         return;
       }
 
-      // Update hasMore based on whether there are more repositories to load (only for non-subscribed modes)
+
       if (filterMode !== 'subscribed') {
         setHasMore(targetRepos.length > pageNum * 10);
       } else {
-        setHasMore(false); // No pagination for subscribed mode
+        setHasMore(false);
       }
 
-      // Fetch commits for repositories
+
       for (const repo of reposToProcess) {
         try {
           const { data: repoCommits } = await octokit.rest.repos.listCommits({
@@ -225,7 +224,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
             repo: repo.name,
             per_page: 20,
             page: 1,
-            since: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString() // Last 90 days
+            since: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString()
           })
 
           repoCommits.forEach(commit => {
@@ -234,7 +233,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
             }
           })
 
-          // Format commits
+
           const formattedCommits = repoCommits.map(commit => ({
             sha: commit.sha,
             message: commit.commit.message,
@@ -259,10 +258,10 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
         }
       }
 
-      // Ordenar por data
+
       allCommits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       
-      // Update statistics
+
       const validRepos = targetRepos.length;
       const validCommits = allCommits.length;
       
@@ -273,9 +272,9 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
         contributors: contributors
       })
 
-      // If we have repositories but no commits, try fetching with a longer time range
+
       if (validRepos > 0 && validCommits === 0 && !append) {
-        // Try fetching commits from the last 180 days for the first page
+
         for (const repo of reposToProcess) {
           try {
             const { data: repoCommits } = await octokit.rest.repos.listCommits({
@@ -283,7 +282,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
               repo: repo.name,
               per_page: 20,
               page: 1,
-              since: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString() // Last 180 days
+              since: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString()
             });
 
             repoCommits.forEach(commit => {
@@ -316,7 +315,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
           }
         }
 
-        // Update stats again with potentially new commits
+
         setStats(prev => ({
           ...prev,
           recentCommits: allCommits.length,
@@ -325,17 +324,17 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
       }
 
 
-      // Sort all commits by date
+
       allCommits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-      // Create unique commits array by removing duplicates based on SHA
+
       const uniqueCommits = allCommits.filter((commit, index, self) =>
         index === self.findIndex((c) => c.sha === commit.sha)
       )
 
       if (append) {
         setCommits(prev => {
-          // Combine previous and new commits, then remove duplicates
+
           const combined = [...prev, ...uniqueCommits]
           return combined.filter((commit, index, self) =>
             index === self.findIndex((c) => c.sha === commit.sha)
@@ -345,7 +344,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
         setCommits(uniqueCommits)
       }
 
-      // Update hasMore based on whether we got any new commits
+
       setHasMore(uniqueCommits.length > 0)
     } catch (err) {
       console.error('Erro ao buscar commits:', err)
@@ -371,7 +370,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
     const scrollPosition = window.scrollY + window.innerHeight
     const documentHeight = document.documentElement.scrollHeight
 
-    // Load more when 20% from bottom of page
+
     if (documentHeight - scrollPosition <= window.innerHeight * 0.2 && !loading && !loadingMore && hasMore) {
       const nextPage = page + 1
       setPage(nextPage)
@@ -390,21 +389,20 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
     void fetchCommits(1)
   }
 
-  // Effect for initial setup and cleanup
-  // Initial load
+
   useEffect(() => {
     void fetchSubscribedRepos()
     void fetchStarredRepos()
     void fetchCommits(1)
   }, [accessToken])
 
-  // Reset cached repos when filter changes
+
   useEffect(() => {
     setPage(1)
     void fetchCommits(1)
   }, [filterMode])
 
-  // Scroll handler setup
+
   useEffect(() => {
     if (typeof window === 'undefined') return
 
@@ -412,15 +410,15 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
     return () => window.removeEventListener('scroll', handleScroll)
   }, [handleScroll])
 
-  // Listen for subscription changes and refresh if needed
+
   useEffect(() => {
-    // If we're in subscribed mode, refresh when filter changes
+
     if (filterMode === 'subscribed') {
       setCachedRepos(prev => ({ ...prev, subscribed: [] }));
       void fetchCommits(1);
     }
 
-    // Auto refresh every 5 minutes
+
     const autoRefreshInterval = setInterval(() => {
       void fetchCommits(1, false)
     }, 5 * 60 * 1000)
@@ -430,7 +428,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
     }
   }, [accessToken])
 
-  // Effect to handle filter mode changes
+
   useEffect(() => {
     setLoading(true)
     setPage(1)

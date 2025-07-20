@@ -9,7 +9,6 @@ export default function SignIn() {
   const router = useRouter()
 
   useEffect(() => {
-    // Redirecionar para a página inicial onde está a landing page
     router.push("/")
   }, [router])
 
