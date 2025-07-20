@@ -47,7 +47,8 @@
   "Dashboard": {
     "feed": "Feed",
     "repositories": "Repositories",
-    "profile": "Profile"
+    "profile": "Profile",
+    "settings": "Settings"
   },
   "Sidebar": {
     "feed": "Feed",
@@ -67,7 +68,34 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "contributors": "Contributors",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "refresh": "Refresh",
+    "allCommits": "All Commits",
+    "subscribedCommits": "Subscribed",
+    "starredCommits": "Starred",
+    "subscribing": "Subscribing...",
+    "unsubscribing": "Unsubscribing...",
+    "subscribeSuccess": "Successfully subscribed to {repo}",
+    "unsubscribeSuccess": "Successfully unsubscribed from {repo}",
+    "subscribeError": "Failed to subscribe to {repo}",
+    "unsubscribeError": "Failed to unsubscribe from {repo}",
+    "noCommits": "No commits found"
+  },
+  "Settings": {
+    "title": "Settings",
+    "apiKeyTitle": "GitHub API Key",
+    "tokenPlaceholder": "Enter your GitHub API token",
+    "saveToken": "Save Token",
+    "tokenInstructions": "Generate a new token at GitHub Settings > Developer settings > Personal access tokens > Fine-grained tokens",
+    "tokenRequired": "API token is required",
+    "tokenSaved": "API token saved successfully",
+    "invalidToken": "Invalid API token",
+    "rateLimitTitle": "API Rate Limit",
+    "rateLimitError": "Error fetching rate limit",
+    "total": "Total",
+    "remaining": "Remaining",
+    "reset": "Resets at",
+    "refresh": "Refresh"
   },
   "RepositoryList": {
     "title": "Repositories",

@@ -7,7 +7,8 @@ import { useSession, signOut } from "next-auth/react"
 import CommitFeed from "./commit-feed"
 import RepositoryList from "./repository-list"
 import UserProfile from "./user-profile"
-import { Github, LogOut, GitCommit, Users, Book, Settings, Bell } from "lucide-react"
+import Settings from "./settings"
+import { Github, LogOut, GitCommit, Users, Book, Settings as SettingsIcon, Bell } from "lucide-react"
 import { Card, CardContent } from "../ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Button } from "../ui/button"
@@ -55,52 +56,6 @@ export default function Dashboard() {
         </Card>
       </div>
     )
-  }
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case "feed":
-        return (
-          <CommitFeed 
-            accessToken={session.accessToken ?? ""} 
-            onUserClick={handleUserClick}
-            locale={language}
-          />
-        )
-      case "repositories":
-        return (
-          <RepositoryList 
-            accessToken={session.accessToken ?? ""}
-            onUserClick={handleUserClick}
-            locale={language}
-          />
-        )
-      case "profile":
-        return selectedUser ? (
-          <UserProfile 
-            username={selectedUser}
-            accessToken={session.accessToken ?? ""}
-            onBack={handleBackToFeed}
-          />
-        ) : (
-          <UserProfile 
-            username={session.user?.name || ""}
-            accessToken={session.accessToken ?? ""}
-            onBack={handleBackToFeed}
-          />
-        )
-      default:
-        return (
-          <Card className="bg-white/5 border-white/10">
-            <CardContent className="pt-6">
-              <div className="text-center py-8">
-                <h3 className="text-lg font-semibold mb-2 text-white">{t('comingSoon.title')}</h3>
-                <p className="text-white/60">{t('comingSoon.description')}</p>
-              </div>
-            </CardContent>
-          </Card>
-        )
-    }
   }
 
   return (
@@ -185,20 +140,58 @@ export default function Dashboard() {
                   <Users className="w-4 h-4 mr-2" />
                   {t('profile')}
                 </TabsTrigger>
+                <TabsTrigger 
+                  value="settings"
+                  className="data-[state=active]:bg-purple-600 data-[state=active]:text-white text-white/70 hover:text-white transition-colors"
+                >
+                  <SettingsIcon className="w-4 h-4 mr-2" />
+                  {t('settings')}
+                </TabsTrigger>
               </TabsList>
             </div>
 
             {/* Tab Content */}
-            <TabsContent value="feed" className="space-y-6">
-              {renderContent()}
+            <TabsContent value="feed">
+              <CommitFeed 
+                accessToken={session.accessToken ?? ""} 
+                onUserClick={handleUserClick}
+                locale={language}
+              />
             </TabsContent>
 
-            <TabsContent value="repositories" className="space-y-6">
-              {renderContent()}
+            <TabsContent value="repositories">
+              <RepositoryList 
+                accessToken={session.accessToken ?? ""}
+                onUserClick={handleUserClick}
+                locale={language}
+              />
             </TabsContent>
 
-            <TabsContent value="profile" className="space-y-6">
-              {renderContent()}
+            <TabsContent value="profile">
+              {selectedUser ? (
+                <UserProfile 
+                  username={selectedUser}
+                  accessToken={session.accessToken ?? ""}
+                  onBack={handleBackToFeed}
+                />
+              ) : (
+                <UserProfile 
+                  username={session.user?.name || ""}
+                  accessToken={session.accessToken ?? ""}
+                  onBack={handleBackToFeed}
+                />
+              )}
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <Settings 
+                accessToken={session.accessToken ?? ""}
+                onTokenChange={(newToken) => {
+                  // TODO: Update session token
+                  console.log('Token updated:', newToken)
+                }}
+                locale={language}
+              />
             </TabsContent>
           </Tabs>
         </div>

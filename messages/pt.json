@@ -67,7 +67,18 @@
     "today": "Hoje",
     "yesterday": "Ontem",
     "contributors": "Colaboradores",
-    "tryAgain": "Tentar novamente"
+    "tryAgain": "Tentar novamente",
+    "refresh": "Atualizar",
+    "allCommits": "Todos os Commits",
+    "subscribedCommits": "Inscritos",
+    "starredCommits": "Favoritos",
+    "subscribing": "Inscrevendo...",
+    "unsubscribing": "Cancelando inscrição...",
+    "subscribeSuccess": "Inscrito com sucesso em {repo}",
+    "unsubscribeSuccess": "Inscrição cancelada com sucesso em {repo}",
+    "subscribeError": "Falha ao se inscrever em {repo}",
+    "unsubscribeError": "Falha ao cancelar inscrição em {repo}",
+    "noCommits": "Nenhum commit encontrado"
   },
   "RepositoryList": {
     "title": "Repositórios",

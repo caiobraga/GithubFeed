@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Octokit } from "@octokit/rest"
 import { useTranslations } from 'next-intl'
+import { toast } from 'sonner'
 import { Card, CardContent } from "../ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar"
 import { Badge } from "../ui/badge"
@@ -60,6 +61,7 @@ export default function RepositoryList({ accessToken, onUserClick, locale = 'en'
   const [searchTerm, setSearchTerm] = useState("")
   const [languageFilter, setLanguageFilter] = useState("")
   const [subscribedRepos, setSubscribedRepos] = useState<Set<number>>(new Set())
+  const [loadingSubscriptions, setLoadingSubscriptions] = useState<Set<number>>(new Set())
   const [refreshing, setRefreshing] = useState(false)
   const [hasMore, setHasMore] = useState(true)
   const [page, setPage] = useState(1)
@@ -160,46 +162,91 @@ export default function RepositoryList({ accessToken, onUserClick, locale = 'en'
     try {
       const isCurrentlySubscribed = subscribedRepos.has(repo.id)
       
+      // Set loading state
+      setLoadingSubscriptions(prev => new Set(prev).add(repo.id))
+      
       if (isCurrentlySubscribed) {
-        // Cancelar inscrição
-        await octokit.rest.activity.deleteRepoSubscription({
+        // Unsubscribe
+        await octokit.activity.deleteRepoSubscription({
           owner: repo.owner.login,
           repo: repo.name
         })
+
+        // Update subscription status locally
         setSubscribedRepos(prev => {
           const newSet = new Set(prev)
           newSet.delete(repo.id)
           return newSet
         })
+
+        // Update repositories list
+        setRepositories(prev => 
+          prev.map(r => 
+            r.id === repo.id 
+              ? { ...r, subscribed: false }
+              : r
+          )
+        )
+
+        // Update filtered repositories
+        setFilteredRepos(prev => 
+          prev.map(r => 
+            r.id === repo.id 
+              ? { ...r, subscribed: false }
+              : r
+          )
+        )
+
+        showSuccessToast(repo, false)
       } else {
-        // Inscrever-se
-        await octokit.rest.activity.setRepoSubscription({
+        // Subscribe
+        await octokit.activity.setRepoSubscription({
           owner: repo.owner.login,
           repo: repo.name,
           subscribed: true,
           ignored: false
         })
+
+        // Update subscription status locally
         setSubscribedRepos(prev => new Set(prev).add(repo.id))
+
+        // Update repositories list
+        setRepositories(prev => 
+          prev.map(r => 
+            r.id === repo.id 
+              ? { ...r, subscribed: true }
+              : r
+          )
+        )
+
+        // Update filtered repositories
+        setFilteredRepos(prev => 
+          prev.map(r => 
+            r.id === repo.id 
+              ? { ...r, subscribed: true }
+              : r
+          )
+        )
+
+        showSuccessToast(repo, true)
       }
-      
-      // Atualizar o repositório na lista
-      setRepositories(prev => 
-        prev.map(r => 
-          r.id === repo.id 
-            ? { ...r, subscribed: !isCurrentlySubscribed }
-            : r
-        )
-      )
-      setFilteredRepos(prev => 
-        prev.map(r => 
-          r.id === repo.id 
-            ? { ...r, subscribed: !isCurrentlySubscribed }
-            : r
-        )
-      )
+
+      // Refresh the commits feed to reflect the new subscription status
+      const commitFeedElement = document.querySelector('[data-testid="commit-feed"]')
+      if (commitFeedElement) {
+        const event = new CustomEvent('subscription-changed')
+        commitFeedElement.dispatchEvent(event)
+      }
       
     } catch (err) {
       console.error('Erro ao alterar inscrição:', err)
+      showErrorToast(repo, !subscribedRepos.has(repo.id))
+    } finally {
+      setLoadingSubscriptions(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(repo.id)
+        return newSet
+      })
     }
   }
 
@@ -336,6 +383,22 @@ export default function RepositoryList({ accessToken, onUserClick, locale = 'en'
           </Button>
         </CardContent>
       </Card>
+    )
+  }
+
+  const showSuccessToast = (repo: Repository, isSubscribing: boolean) => {
+    toast.success(
+      t(isSubscribing ? 'subscribeSuccess' : 'unsubscribeSuccess', {
+        repo: repo.full_name
+      })
+    )
+  }
+
+  const showErrorToast = (repo: Repository, isSubscribing: boolean) => {
+    toast.error(
+      t(isSubscribing ? 'subscribeError' : 'unsubscribeError', {
+        repo: repo.full_name
+      })
     )
   }
 
@@ -523,24 +586,22 @@ export default function RepositoryList({ accessToken, onUserClick, locale = 'en'
                     {/* Subscription Button */}
                     <Button
                       onClick={() => toggleSubscription(repo)}
-                      variant={subscribedRepos.has(repo.id) ? "default" : "outline"}
+                      variant="outline"
                       size="sm"
-                      className={
-                        subscribedRepos.has(repo.id)
-                          ? "bg-purple-600 hover:bg-purple-700 text-white"
-                          : "border-white/20 text-white hover:bg-white/10"
-                      }
+                      className="border-white/20 text-white hover:bg-white/10"
+                      disabled={loadingSubscriptions.has(repo.id)}
                     >
-                      {subscribedRepos.has(repo.id) ? (
+                      {loadingSubscriptions.has(repo.id) ? (
                         <>
-                          <Bell className="w-4 h-4 mr-2" />
-                          {t('subscribed')}
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span className="sr-only">
+                            {t(subscribedRepos.has(repo.id) ? 'unsubscribing' : 'subscribing')}
+                          </span>
                         </>
+                      ) : subscribedRepos.has(repo.id) ? (
+                        <BellOff className="w-4 h-4" />
                       ) : (
-                        <>
-                          <BellOff className="w-4 h-4 mr-2" />
-                          {t('subscribe')}
-                        </>
+                        <Bell className="w-4 h-4" />
                       )}
                     </Button>
                   </div>

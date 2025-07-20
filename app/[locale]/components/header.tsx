@@ -43,7 +43,7 @@ export default function Header() {
             
             <Separator orientation="vertical" className="h-6 hidden md:block" />
             
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={session.user.image || ""} alt={session.user.name || "User"} />
                 <AvatarFallback>

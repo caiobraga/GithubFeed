@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { Octokit } from "@octokit/rest"
 import { useTranslations } from 'next-intl'
 import { usePathname } from 'next/navigation'
@@ -56,6 +56,15 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
   const [refreshing, setRefreshing] = useState(false)
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
+  const COMMITS_PER_PAGE = 30
+  const [filterMode, setFilterMode] = useState<'all' | 'subscribed' | 'starred'>('all')
+  const [subscribedRepos, setSubscribedRepos] = useState<string[]>([])
+  const [starredRepos, setStarredRepos] = useState<string[]>([])
+  const [cachedRepos, setCachedRepos] = useState<{
+    all: Array<any>;
+    starred: Array<any>;
+    subscribed: Array<any>;
+  }>({ all: [], starred: [], subscribed: [] })
   const [stats, setStats] = useState<{
     recentCommits: number
     repositories: number
@@ -67,6 +76,35 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
     auth: accessToken,
   })
 
+  const fetchStarredRepos = async () => {
+    try {
+      const { data: starred } = await octokit.activity.listReposStarredByAuthenticatedUser({
+        per_page: 100
+      })
+      setStarredRepos(starred.map(repo => repo.full_name))
+    } catch (err) {
+      console.error('Error fetching starred repos:', err)
+    }
+  }
+
+  const fetchSubscribedRepos = async () => {
+    try {
+      // Get user's watched repositories
+      const { data: watchedRepos } = await octokit.activity.listWatchedReposForAuthenticatedUser({
+        per_page: 100
+      })
+
+      // Get unique repository names
+      const subscribedRepoNames = new Set(
+        watchedRepos.map(repo => repo.full_name)
+      )
+
+      setSubscribedRepos(Array.from(subscribedRepoNames))
+    } catch (err) {
+      console.error('Error fetching subscribed repos:', err)
+    }
+  }
+
   const fetchCommits = async (pageNum = 1, append = false) => {
     try {
       setError(null)
@@ -75,43 +113,119 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
       } else {
         setLoadingMore(true)
       }
-      
-      // Buscar contagem total de repositórios
-      const response = await octokit.request('GET /user/repos', {
-        per_page: 1,
-        affiliation: 'owner,collaborator,organization_member'
-      })
 
-      // Extrair total do header Link
-      let totalRepos = 0
-      const linkHeader = response.headers.link
-      if (linkHeader) {
-        const match = linkHeader.match(/page=([0-9]+)>; rel="last"/)
-        if (match) {
-          totalRepos = parseInt(match[1])
+      // Use cached repos if available, otherwise fetch
+      let targetRepos: Array<{ owner: { login: string }, name: string, full_name: string, html_url: string }> = [];
+      
+      if (cachedRepos[filterMode].length > 0) {
+        targetRepos = cachedRepos[filterMode];
+      } else {
+        if (filterMode === 'starred') {
+          const { data: starred } = await octokit.activity.listReposStarredByAuthenticatedUser({
+            per_page: 100
+          });
+          targetRepos = starred.map(repo => ({
+            owner: { login: repo.owner.login },
+            name: repo.name,
+            full_name: repo.full_name,
+            html_url: repo.html_url,
+            type: 'starred'
+          }));
+          setCachedRepos(prev => ({ ...prev, starred: targetRepos }));
+        } else if (filterMode === 'subscribed') {
+          // Get all watched (subscribed) repositories
+          let allWatched: any[] = [];
+          let page = 1;
+          let hasMore = true;
+
+          while (hasMore) {
+            const { data: watched } = await octokit.activity.listWatchedReposForAuthenticatedUser({
+              per_page: 100,
+              page: page
+            });
+            
+            if (watched.length === 0 || watched.length < 100) {
+              hasMore = false;
+            }
+            
+            if (watched.length > 0) {
+              allWatched = [...allWatched, ...watched];
+              page++;
+            }
+          }
+
+          targetRepos = allWatched.map(repo => ({
+            owner: { login: repo.owner.login },
+            name: repo.name,
+            full_name: repo.full_name,
+            html_url: repo.html_url,
+            type: 'subscribed'
+          }));
+          setCachedRepos(prev => ({ ...prev, subscribed: targetRepos }));
+        } else {
+          // For 'all' mode, combine starred and subscribed repositories
+          const [starred, watched] = await Promise.all([
+            octokit.activity.listReposStarredByAuthenticatedUser({ per_page: 100 }),
+            octokit.activity.listWatchedReposForAuthenticatedUser({ per_page: 100 })
+          ]);
+
+          const starredRepos = starred.data.map(repo => ({
+            owner: { login: repo.owner.login },
+            name: repo.name,
+            full_name: repo.full_name,
+            html_url: repo.html_url,
+            type: 'starred'
+          }));
+
+          const watchedRepos = watched.data.map(repo => ({
+            owner: { login: repo.owner.login },
+            name: repo.name,
+            full_name: repo.full_name,
+            html_url: repo.html_url,
+            type: 'subscribed'
+          }));
+
+          // Combine and deduplicate by full_name
+          const seen = new Set();
+          targetRepos = [...starredRepos, ...watchedRepos].filter(repo => {
+            if (seen.has(repo.full_name)) return false;
+            seen.add(repo.full_name);
+            return true;
+          });
+
+          setCachedRepos(prev => ({ ...prev, all: targetRepos }));
         }
       }
 
-      // Buscar repositórios da página atual
-      const { data: repos } = await octokit.rest.repos.listForAuthenticatedUser({
-        sort: 'updated',
-        per_page: 30,
-        page: pageNum,
-        affiliation: 'owner,collaborator,organization_member'
-      })
+      const allCommits: Commit[] = [];
+      const contributors = new Set<string>();
 
-      const allCommits: Commit[] = []
-      const contributors = new Set<string>()
+      // For subscribed mode, fetch commits from all repositories at once
+      // For other modes, use pagination
+      const reposToProcess = filterMode === 'subscribed' ? targetRepos : targetRepos.slice((pageNum - 1) * 10, pageNum * 10);
 
-      // Buscar commits de cada repositório
-      for (const repo of repos) {
+      if (reposToProcess.length === 0) {
+        setHasMore(false);
+        setLoadingMore(false);
+        return;
+      }
+
+      // Update hasMore based on whether there are more repositories to load (only for non-subscribed modes)
+      if (filterMode !== 'subscribed') {
+        setHasMore(targetRepos.length > pageNum * 10);
+      } else {
+        setHasMore(false); // No pagination for subscribed mode
+      }
+
+      // Fetch commits for repositories
+      for (const repo of reposToProcess) {
         try {
           const { data: repoCommits } = await octokit.rest.repos.listCommits({
             owner: repo.owner.login,
             repo: repo.name,
-            per_page: 5, // Reduzido para carregar menos commits inicialmente
-            page: pageNum,
-            since: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString() // Últimos 90 dias
+            per_page: 20,
+            page: 1,
+            since: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString() // Last 90 days
           })
 
           repoCommits.forEach(commit => {
@@ -120,6 +234,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
             }
           })
 
+          // Format commits
           const formattedCommits = repoCommits.map(commit => ({
             sha: commit.sha,
             message: commit.commit.message,
@@ -147,26 +262,91 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
       // Ordenar por data
       allCommits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
       
-      // Atualizar estatísticas
+      // Update statistics
+      const validRepos = targetRepos.length;
+      const validCommits = allCommits.length;
+      
       setStats({
-        recentCommits: allCommits.length,
-        repositories: repos.length,
-        totalRepos: totalRepos,
+        recentCommits: validCommits,
+        repositories: validRepos,
+        totalRepos: validRepos,
         contributors: contributors
       })
 
-      if (append) {
-        setCommits(prev => [...prev, ...allCommits])
-      } else {
-        setCommits(allCommits)
+      // If we have repositories but no commits, try fetching with a longer time range
+      if (validRepos > 0 && validCommits === 0 && !append) {
+        // Try fetching commits from the last 180 days for the first page
+        for (const repo of reposToProcess) {
+          try {
+            const { data: repoCommits } = await octokit.rest.repos.listCommits({
+              owner: repo.owner.login,
+              repo: repo.name,
+              per_page: 20,
+              page: 1,
+              since: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString() // Last 180 days
+            });
+
+            repoCommits.forEach(commit => {
+              if (commit.author?.login) {
+                contributors.add(commit.author.login);
+              }
+            });
+
+            const formattedCommits = repoCommits.map(commit => ({
+              sha: commit.sha,
+              message: commit.commit.message,
+              author: {
+                name: commit.commit.author?.name || 'Unknown',
+                email: commit.commit.author?.email || '',
+                avatar_url: commit.author?.avatar_url,
+                login: commit.author?.login
+              },
+              date: commit.commit.author?.date || '',
+              url: commit.html_url,
+              repository: {
+                name: repo.name,
+                full_name: repo.full_name,
+                url: repo.html_url
+              }
+            }));
+
+            allCommits.push(...formattedCommits);
+          } catch (repoError) {
+            console.warn(`Error fetching commits for ${repo.name}:`, repoError);
+          }
+        }
+
+        // Update stats again with potentially new commits
+        setStats(prev => ({
+          ...prev,
+          recentCommits: allCommits.length,
+          contributors: contributors
+        }));
       }
-      
-      // Se não houver commits ou se houver menos que o esperado, não há mais para carregar
+
+
+      // Sort all commits by date
+      allCommits.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+      // Create unique commits array by removing duplicates based on SHA
+      const uniqueCommits = allCommits.filter((commit, index, self) =>
+        index === self.findIndex((c) => c.sha === commit.sha)
+      )
+
       if (append) {
-        setHasMore(allCommits.length > 0)
+        setCommits(prev => {
+          // Combine previous and new commits, then remove duplicates
+          const combined = [...prev, ...uniqueCommits]
+          return combined.filter((commit, index, self) =>
+            index === self.findIndex((c) => c.sha === commit.sha)
+          )
+        })
       } else {
-        setHasMore(allCommits.length >= 5)
+        setCommits(uniqueCommits)
       }
+
+      // Update hasMore based on whether we got any new commits
+      setHasMore(uniqueCommits.length > 0)
     } catch (err) {
       console.error('Erro ao buscar commits:', err)
       setError('Erro ao carregar commits. Verifique suas permissões do GitHub.')
@@ -185,20 +365,19 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
     }
   }
 
-  const handleScroll = debounce(() => {
-    if (loading || loadingMore || !hasMore) return;
+  const handleScroll = useCallback(() => {
+    if (typeof window === 'undefined') return
 
     const scrollPosition = window.scrollY + window.innerHeight
     const documentHeight = document.documentElement.scrollHeight
-    
+
     // Load more when 20% from bottom of page
-    if (documentHeight - scrollPosition <= window.innerHeight * 0.2) {
+    if (documentHeight - scrollPosition <= window.innerHeight * 0.2 && !loading && !loadingMore && hasMore) {
       const nextPage = page + 1
       setPage(nextPage)
-      setLoadingMore(true)
       void fetchCommits(nextPage, true)
     }
-  }, 150)
+  }, [loading, loadingMore, hasMore, page])
 
   const handleRefresh = async () => {
     setRefreshing(true)
@@ -206,22 +385,57 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
     await fetchCommits(1)
   }
 
+  const handleSubscriptionChange = () => {
+    void fetchSubscribedRepos()
+    void fetchCommits(1)
+  }
+
+  // Effect for initial setup and cleanup
+  // Initial load
   useEffect(() => {
-    fetchCommits(1)
-    
-    // Add scroll listener
+    void fetchSubscribedRepos()
+    void fetchStarredRepos()
+    void fetchCommits(1)
+  }, [accessToken])
+
+  // Reset cached repos when filter changes
+  useEffect(() => {
+    setPage(1)
+    void fetchCommits(1)
+  }, [filterMode])
+
+  // Scroll handler setup
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+
     window.addEventListener('scroll', handleScroll)
-    
-    // Auto refresh every 2 minutes
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [handleScroll])
+
+  // Listen for subscription changes and refresh if needed
+  useEffect(() => {
+    // If we're in subscribed mode, refresh when filter changes
+    if (filterMode === 'subscribed') {
+      setCachedRepos(prev => ({ ...prev, subscribed: [] }));
+      void fetchCommits(1);
+    }
+
+    // Auto refresh every 5 minutes
     const autoRefreshInterval = setInterval(() => {
       void fetchCommits(1, false)
-    }, 2 * 60 * 1000)
-    
+    }, 5 * 60 * 1000)
+
     return () => {
-      window.removeEventListener('scroll', handleScroll)
       clearInterval(autoRefreshInterval)
     }
   }, [accessToken])
+
+  // Effect to handle filter mode changes
+  useEffect(() => {
+    setLoading(true)
+    setPage(1)
+    void fetchCommits(1, false)
+  }, [filterMode])
 
 
 
@@ -234,7 +448,7 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
 
   if (loading) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-6" data-testid="commit-feed">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <h2 className="text-3xl font-bold text-white flex items-center">
             <GitCommit className="w-8 h-8 mr-3 text-purple-400" />
@@ -285,7 +499,48 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-testid="commit-feed">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+        <h2 className="text-3xl font-bold text-white flex items-center">
+          <GitCommit className="w-8 h-8 mr-3 text-purple-400" />
+          {t('title')}
+        </h2>
+        <div className="flex gap-2">
+          <Button
+            variant={filterMode === 'all' ? 'default' : 'outline'}
+            onClick={() => setFilterMode('all')}
+            className={filterMode === 'all' ? 'bg-purple-600 hover:bg-purple-700' : 'border-white/20 text-white hover:bg-white/10'}
+          >
+            {t('allCommits')}
+          </Button>
+          <Button
+            variant={filterMode === 'subscribed' ? 'default' : 'outline'}
+            onClick={() => setFilterMode('subscribed')}
+            className={filterMode === 'subscribed' ? 'bg-purple-600 hover:bg-purple-700' : 'border-white/20 text-white hover:bg-white/10'}
+          >
+            {t('subscribedCommits')}
+          </Button>
+          <Button
+            variant={filterMode === 'starred' ? 'default' : 'outline'}
+            onClick={() => setFilterMode('starred')}
+            className={filterMode === 'starred' ? 'bg-purple-600 hover:bg-purple-700' : 'border-white/20 text-white hover:bg-white/10'}
+          >
+            {t('starredCommits')}
+          </Button>
+        </div>
+        </div>
+        <Button 
+          variant="outline" 
+          onClick={handleRefresh} 
+          disabled={refreshing}
+          className="border-white/20 text-white hover:bg-white/10"
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          {t('refresh')}
+        </Button>
+      </div>
+
       {/* Stats Section */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mb-8">
         <Card className="bg-white/5 border-white/10">
@@ -320,7 +575,8 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
         </Card>
       </div>
 
-      {commits.length === 0 ? (
+      {/* Always show commits or loading state */}
+      {loading && commits.length === 0 ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
             <Card key={i} className="bg-white/5 border-white/10">
@@ -337,11 +593,16 @@ export default function CommitFeed({ accessToken, onUserClick, locale = 'en' }: 
             </Card>
           ))}
         </div>
+      ) : commits.length === 0 ? (
+        <div className="text-center py-8 text-gray-400">
+          <GitCommit className="w-12 h-12 mx-auto mb-4 opacity-50" />
+          <p>{t('noCommits')}</p>
+        </div>
       ) : (
         <div className="space-y-4">
           {commits.map((commit) => (
             <Card 
-              key={commit.sha} 
+              key={`${commit.sha}-${commit.repository.full_name}`} 
               className="bg-white/5 border-white/10 hover:bg-white/10 transition-all duration-300 hover-lift overflow-hidden"
             >
               <CardContent className="p-4 sm:p-6">

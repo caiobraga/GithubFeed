@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
 import { NextIntlClientProvider } from 'next-intl';
+import { Toaster } from 'sonner';
 import { locales } from '../../i18n/settings';
 
 export function generateStaticParams() {
@@ -23,6 +24,7 @@ export default async function LocaleLayout({
   return (
     <NextIntlClientProvider messages={messages} locale={locale}>
       {children}
+      <Toaster richColors closeButton position="top-right" />
     </NextIntlClientProvider>
   );
 }
